@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${PROXY_NAME}
+spec:
+  template:
+    spec:
+      containers:
+      - name: proxy
+        args:
+        - --pool-name
+        - ${POOL_NAME}
+        - --pool-namespace
+        - "default"
+        - --v
+        - "4"
+        - --zap-encoder
+        - "json"
+        - --grpc-port
+        - "9002"
+        - --grpc-health-port
+        - "9003"
+        - --config-file
+        - "/etc/proxy/proxy-config.yaml"

@@ -1,0 +1,17 @@
+# ------------------------------------------------------------------------------
+# Inference Proxy
+#
+# This provides a working stack for an inference Proxy, including the Inference Pool
+# collect pods from a model serving framework (e.g. VLLM, or even just the VLLM Simulator).
+#
+# ------------------------------------------------------------------------------
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- service-accounts.yaml
+- rbac.yaml
+- inference-pools.yaml
+- services.yaml
+- deployments.yaml
+

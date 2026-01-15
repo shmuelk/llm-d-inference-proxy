@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${PROXY_NAME}
+  labels:
+    app: ${PROXY_NAME}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${PROXY_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${PROXY_NAME}
+    spec:
+      serviceAccountName: ${PROXY_NAME}
+      terminationGracePeriodSeconds: 130
+      containers:
+      - name: proxy
+        image: ${PROXY_IMAGE}
+        imagePullPolicy: IfNotPresent
+        args:
+        - --pool-name
+        - "${POOL_NAME}"
+        - --v
+        - "4"
+        - --zap-encoder
+        - "json"
+        - --grpc-port
+        - "9002"
+        - --grpc-health-port
+        - "9003"
+        env:
+        - name: PYTHONHASHSEED
+          value: "42"
+        ports:
+        - containerPort: 5557
+        - containerPort: 9002
+        - containerPort: 9003
+        - name: metrics
+          containerPort: 9090
+        #livenessProbe:
+        #  grpc:
+        #    port: 9003
+        #    service: envoy.service.ext_proc.v3.ExternalProcessor
+        #  initialDelaySeconds: 5
+        #  periodSeconds: 10
+        #readinessProbe:
+        #  grpc:
+        #    port: 9003
+        #    service: envoy.service.ext_proc.v3.ExternalProcessor
+        #  initialDelaySeconds: 5
+        #  periodSeconds: 10
+        volumeMounts:
+        - name: proxy-config
+          mountPath: /etc/proxy
+        - name: cache
+          mountPath: /cache
+      volumes:
+      - name: proxy-config
+        configMap:
+          name: proxy-config
+      - name: cache
+        emptyDir: {}
