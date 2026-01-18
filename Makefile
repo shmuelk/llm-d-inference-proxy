@@ -127,7 +127,6 @@ image-build-%: check-container-tool ## Build Docker image ## Build Docker image 
 		--platform linux/$(TARGETARCH) \
  		--build-arg TARGETOS=linux \
 		--build-arg TARGETARCH=$(TARGETARCH) \
-		--build-arg PYTHON_VERSION=$(PYTHON_VERSION) \
 		--build-arg COMMIT_SHA=${GIT_COMMIT_SHA} \
 		--build-arg BUILD_REF=${BUILD_REF} \
  		-t $($*_IMAGE) -f Dockerfile.$* .
@@ -285,68 +284,8 @@ clean-env-dev-kind:      ## Cleanup kind setup (delete cluster $(KIND_CLUSTER_NA
 
 .PHONY: check-dependencies
 check-dependencies: ## Check if development dependencies are installed
-	@if [ "$(TARGETOS)" = "linux" ]; then \
-	  if [ -x "$$(command -v apt)" ]; then \
-	    if ! dpkg -s libzmq3-dev >/dev/null 2>&1 || ! dpkg -s g++ >/dev/null 2>&1 || ! dpkg -s python$(PYTHON_VERSION)-dev >/dev/null 2>&1; then \
-	      echo "ERROR: Missing dependencies. Please run 'sudo make install-dependencies'"; \
-	      exit 1; \
-	    fi; \
-	  elif [ -x "$$(command -v dnf)" ]; then \
-	    if ! rpm -q zeromq-devel >/dev/null 2>&1 || ! rpm -q gcc-c++ >/dev/null 2>&1 || ! rpm -q python$(PYTHON_VERSION)-devel >/dev/null 2>&1; then \
-	      echo "ERROR: Missing dependencies. Please run 'sudo make install-dependencies'"; \
-	      exit 1; \
-	    fi; \
-	  else \
-	    echo "WARNING: Unsupported Linux package manager. Cannot verify dependencies."; \
-	  fi; \
-	elif [ "$(TARGETOS)" = "darwin" ]; then \
-	  if [ -x "$$(command -v brew)" ]; then \
-	    if ! brew list zeromq pkg-config >/dev/null 2>&1; then \
-	      echo "ERROR: Missing dependencies. Please run 'make install-dependencies'"; \
-	      exit 1; \
-	    fi; \
-	  else \
-	    echo "ERROR: Homebrew is not installed and is required. Install it from https://brew.sh/"; \
-	    exit 1; \
-	  fi; \
-	fi
 	@echo "✅ All dependencies are installed."
 
 .PHONY: install-dependencies
 install-dependencies: ## Install development dependencies based on OS/ARCH
 	@echo "Checking and installing development dependencies..."
-	@if [ "$(TARGETOS)" = "linux" ]; then \
-	  if [ -x "$$(command -v apt)" ]; then \
-	    if ! dpkg -s libzmq3-dev >/dev/null 2>&1 || ! dpkg -s g++ >/dev/null 2>&1 || ! dpkg -s python$(PYTHON_VERSION)-dev >/dev/null 2>&1; then \
-	      echo "Installing dependencies with apt..."; \
-	      apt-get update && apt-get install -y libzmq3-dev g++ python$(PYTHON_VERSION)-dev; \
-	    else \
-	      echo "✅ ZMQ, g++, and Python dev headers are already installed."; \
-	    fi; \
-	  elif [ -x "$$(command -v dnf)" ]; then \
-	    if ! rpm -q zeromq-devel >/dev/null 2>&1 || ! rpm -q gcc-c++ >/dev/null 2>&1 || ! rpm -q python$(PYTHON_VERSION)-devel >/dev/null 2>&1; then \
-	      echo "Installing dependencies with dnf..."; \
-	      dnf install -y zeromq-devel gcc-c++ python$(PYTHON_VERSION)-devel; \
-	    else \
-	      echo "✅ ZMQ, gcc-c++, and Python dev headers are already installed."; \
-	    fi; \
-	  else \
-	    echo "ERROR: Unsupported Linux package manager. Install libzmq, g++/gcc-c++, and python-devel manually."; \
-	    exit 1; \
-	  fi; \
-	elif [ "$(TARGETOS)" = "darwin" ]; then \
-	  if [ -x "$$(command -v brew)" ]; then \
-	    if ! brew list zeromq pkg-config >/dev/null 2>&1; then \
-	      echo "Installing dependencies with brew..."; \
-	      brew install zeromq pkg-config; \
-	    else \
-	      echo "✅ ZeroMQ and pkgconf are already installed."; \
-	    fi; \
-	  else \
-	    echo "ERROR: Homebrew is not installed and is required to install zeromq. Install it from https://brew.sh/"; \
-	    exit 1; \
-	  fi; \
-	else \
-	  echo "ERROR: Unsupported OS: $(TARGETOS). Install development dependencies manually."; \
-	  exit 1; \
-	fi
