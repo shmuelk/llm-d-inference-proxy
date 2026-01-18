@@ -22,3 +22,4 @@ spec:
         - "9003"
         - --config-file
         - "/etc/proxy/proxy-config.yaml"
+        - --secure-serving=false
