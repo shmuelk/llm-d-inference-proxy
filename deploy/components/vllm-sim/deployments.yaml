@@ -28,6 +28,7 @@ spec:
         - "--event-batch-size=16"
         - "--tokenizers-cache-dir=/tokenizer-cache"
         - "--data-parallel-size=${VLLM_DATA_PARALLEL_SIZE}"
+        - "--inter-token-latency=250"
         ports:
         - name: http
           containerPort: 8000
