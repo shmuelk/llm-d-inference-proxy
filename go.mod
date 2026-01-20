@@ -4,10 +4,12 @@ go 1.24.9
 
 toolchain go1.24.11
 
-replace sigs.k8s.io/gateway-api-inference-extension => github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260115135723-579e9be00b8f
+replace sigs.k8s.io/gateway-api-inference-extension => github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260119150840-91d165025b7b
 
 require (
 	github.com/go-logr/logr v1.4.3
+	github.com/google/uuid v1.6.0
+	k8s.io/apimachinery v0.34.3
 	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/gateway-api-inference-extension v0.0.0-00010101000000-000000000000
 )
@@ -50,7 +52,6 @@ require (
 	github.com/google/cel-go v0.26.0 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
@@ -102,13 +103,12 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/api v0.34.3 // indirect
 	k8s.io/apiextensions-apiserver v0.34.3 // indirect
-	k8s.io/apimachinery v0.34.3 // indirect
 	k8s.io/apiserver v0.34.3 // indirect
 	k8s.io/client-go v0.34.3 // indirect
 	k8s.io/component-base v0.34.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3 // indirect
-	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d // indirect
+	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.2 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
