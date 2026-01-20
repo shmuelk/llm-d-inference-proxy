@@ -32,7 +32,7 @@ export VLLM_SIMULATOR_IMAGE
 export PROXY_TAG="${PROXY_TAG:-dev}"
 
 # Set a default PROXY_IMAGE if not provided
-PROXY_IMAGE="${PROXY_IMAGE:-${IMAGE_REGISTRY}/llm-d-inference-scheduler:${PROXY_TAG}}"
+PROXY_IMAGE="${PROXY_IMAGE:-${IMAGE_REGISTRY}/llm-d-inference-proxy:${PROXY_TAG}}"
 export PROXY_IMAGE
 
 # Set the model name to deploy
@@ -46,6 +46,13 @@ export MODEL_NAME_SAFE=$(echo "${MODEL_ID}" | tr '[:upper:]' '[:lower:]' | tr ' 
 
 # Set the proxy to deploy
 export PROXY_NAME="${PROXY_NAME:-${MODEL_NAME_SAFE}-proxy}"
+
+# Set the default routing side car image tag
+export SIDECAR_TAG="${SIDECAR_TAG:-dev}"
+
+# Set a default SIDECAR_IMAGE if not provided
+SIDECAR_IMAGE="${SIDECAR_IMAGE:-${IMAGE_REGISTRY}/llm-d-routing-sidecar:${SIDECAR_TAG}}"
+export SIDECAR_IMAGE
 
 # Set the inference pool name for the deployment
 export POOL_NAME="${POOL_NAME:-${MODEL_NAME_SAFE}-inference-pool}"
@@ -190,6 +197,14 @@ else
 	kind --name ${CLUSTER_NAME} load docker-image ${PROXY_IMAGE}
 fi
 
+# Load the sidecar image into the cluster
+if [ "${CONTAINER_RUNTIME}" == "podman" ]; then
+	podman save ${SIDECAR_IMAGE} -o /dev/stdout | kind --name ${CLUSTER_NAME} load image-archive /dev/stdin
+else
+	kind --name ${CLUSTER_NAME} load docker-image ${SIDECAR_IMAGE}
+fi
+
+
 # ------------------------------------------------------------------------------
 # CRD Deployment (GIE)
 # ------------------------------------------------------------------------------
@@ -218,7 +233,7 @@ kubectl --context ${KUBE_CONTEXT} create configmap proxy-config --from-file=prox
 
 kustomize build --enable-helm  ${KUSTOMIZE_DIR} \
 	| envsubst '${POOL_NAME} ${MODEL_NAME} ${MODEL_NAME_SAFE} ${PROXY_NAME} ${PROXY_IMAGE} ${VLLM_SIMULATOR_IMAGE} \
-  ${PD_ENABLED} ${KV_CACHE_ENABLED} ${TARGET_PORTS} \
+  ${PD_ENABLED} ${KV_CACHE_ENABLED} ${SIDECAR_IMAGE} ${TARGET_PORTS} \
   ${VLLM_REPLICA_COUNT} ${VLLM_REPLICA_COUNT_P} ${VLLM_REPLICA_COUNT_D} ${VLLM_DATA_PARALLEL_SIZE}' \
   | kubectl --context ${KUBE_CONTEXT} apply -f -
 

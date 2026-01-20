@@ -7,12 +7,17 @@ SHELL := /usr/bin/env bash
 TARGETOS ?= $(shell command -v go >/dev/null 2>&1 && go env GOOS || uname -s | tr '[:upper:]' '[:lower:]')
 TARGETARCH ?= $(shell command -v go >/dev/null 2>&1 && go env GOARCH || uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/; s/armv7l/arm/')
 PROJECT_NAME ?= llm-d-inference-proxy
+SIDECAR_IMAGE_NAME ?= llm-d-routing-sidecar
 VLLM_SIMULATOR_IMAGE_NAME ?= llm-d-inference-sim
 IMAGE_REGISTRY ?= ghcr.io/llm-d
 IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY)/$(PROJECT_NAME)
 PROXY_TAG ?= dev
 export PROXY_TAG
 export PROXY_IMAGE ?= $(IMAGE_TAG_BASE):$(PROXY_TAG)
+SIDECAR_TAG ?= dev
+export SIDECAR_TAG
+SIDECAR_IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY)/$(SIDECAR_IMAGE_NAME)
+export SIDECAR_IMAGE ?= $(SIDECAR_IMAGE_TAG_BASE):$(SIDECAR_TAG)
 NAMESPACE ?= hc4ai-operator
 VLLM_SIMULATOR_TAG ?= dev
 export VLLM_SIMULATOR_TAG
@@ -272,6 +277,7 @@ env-dev-kind: ## Run under kind ($(KIND_CLUSTER_NAME))
 		IMAGE_REGISTRY=$(IMAGE_REGISTRY) \
 		PROXY_IMAGE=$(PROXY_IMAGE) \
 		VLLM_SIMULATOR_IMAGE=${VLLM_SIMULATOR_IMAGE} \
+		SIDECAR_IMAGE=${SIDECAR_IMAGE} \
 		./scripts/kind-dev-env.sh; \
 	fi
 
