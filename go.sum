@@ -233,8 +233,8 @@ github.com/prometheus/sigv4 v0.3.0/go.mod h1:fKtFYDus2M43CWKMNtGvFNHGXnAJJEGZbiY
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
-github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260119150840-91d165025b7b h1:SUjf9H5TQDq7dbuie59To0cBP8gLW3TqN3w1pG4u+Dg=
-github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260119150840-91d165025b7b/go.mod h1:lvMpB9a+Lk+xBi5Pk6teUG+NqA16WR8nRpmBNFJbflU=
+github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260120101516-3b77cac3c221 h1:dySZ/MzP20Nywn+6mbcvS+tZXy7NenTqo6Yd2YbJuGo=
+github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260120101516-3b77cac3c221/go.mod h1:lvMpB9a+Lk+xBi5Pk6teUG+NqA16WR8nRpmBNFJbflU=
 github.com/spf13/cobra v1.9.1 h1:CXSaggrXdbHK9CF+8ywj8Amf7PBRmPCOJugH954Nnlo=
 github.com/spf13/cobra v1.9.1/go.mod h1:nDyEzZ8ogv936Cinf6g1RU9MRY64Ir93oCnqb9wxYW0=
 github.com/spf13/pflag v1.0.6/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=

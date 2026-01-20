@@ -4,12 +4,14 @@ go 1.24.9
 
 toolchain go1.24.11
 
-replace sigs.k8s.io/gateway-api-inference-extension => github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260119150840-91d165025b7b
+replace sigs.k8s.io/gateway-api-inference-extension => github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260120101516-3b77cac3c221
 
 require (
 	github.com/go-logr/logr v1.4.3
 	github.com/google/uuid v1.6.0
+	github.com/prometheus/client_golang v1.23.2
 	k8s.io/apimachinery v0.34.3
+	k8s.io/component-base v0.34.3
 	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/gateway-api-inference-extension v0.0.0-00010101000000-000000000000
 )
@@ -57,12 +59,12 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
@@ -105,7 +107,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.34.3 // indirect
 	k8s.io/apiserver v0.34.3 // indirect
 	k8s.io/client-go v0.34.3 // indirect
-	k8s.io/component-base v0.34.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
