@@ -25,13 +25,17 @@ limitations under the License.
 import (
 	"os"
 
-	"github.com/llm-d/llm-d-inference-proxy/cmd/proxy/runner"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	gierunner "sigs.k8s.io/gateway-api-inference-extension/cmd/epp/runner"
+
+	"github.com/llm-d/llm-d-inference-proxy/cmd/proxy/runner"
+	"github.com/llm-d/llm-d-inference-proxy/pkg/plugins"
 )
 
 func main() {
+	// Register llm-d-inference-scheduler plugins
+	plugins.RegisterAllPlugins()
 
 	if err := gierunner.NewRunner(&runner.ProxyRunnerHelper{}).
 		WithExecutableName("proxy").
