@@ -1,15 +1,14 @@
 package handlers
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
+	"strings"
 
+	"github.com/google/uuid"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/util/logging"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datastore"
@@ -17,6 +16,7 @@ import (
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/metadata"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/requestcontrol"
 	errutil "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/util/error"
+	requtil "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/util/request"
 )
 
 const (
@@ -24,6 +24,23 @@ const (
 	// This ensures that requests without explicit fairness identifiers are still grouped and managed by the Flow Control
 	// system.
 	defaultFairnessID = "default-flow"
+
+	// schemeKey is the Envoy Pseudo Header used for the scheme of the request
+	schemeKey = ":scheme"
+	// methodKey is the Envoy Pseudo Header used for the method of the request
+	methodKey = ":method"
+	// pathKey is the Envoy Pseudo Header used for the path of the request
+	pathKey = ":path"
+)
+
+var (
+	// EnvoyHeaders are sent by Envoy and are added here. However, as they
+	// are invalid header names, they must be deleted here
+	EnvoyHeaders = sets.New(
+		strings.ToLower(schemeKey),
+		strings.ToLower(methodKey),
+		strings.ToLower(pathKey),
+	)
 )
 
 func NewProxy(ds datastore.Datastore, director *requestcontrol.Director) http.Handler {
@@ -38,21 +55,24 @@ type inferenceProxy struct {
 	director *requestcontrol.Director
 }
 
-func (ip *inferenceProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	ctx := req.Context()
+func (ip *inferenceProxy) ServeHTTP(rw http.ResponseWriter, origReq *http.Request) {
+	ctx := origReq.Context()
 	logger := log.FromContext(ctx)
 
-	helper := inferenceProxyHelper{
-		ds:       ip.ds,
-		director: ip.director,
-		reqCtx: &giehandlers.RequestContext{
-			Request: &giehandlers.Request{
-				Headers:  make(map[string]string),
-				Body:     make(map[string]any),
-				Metadata: make(map[string]any),
-			},
-		},
+	requestID := origReq.Header.Get(requtil.RequestIdHeaderKey)
+	// request ID is a must for maintaining a state per request in plugins that hold internal state and use PluginState.
+	// if request id was not supplied as a header, we generate it ourselves.
+	if len(requestID) == 0 {
+		requestID = uuid.NewString()
+		logger.V(logutil.TRACE).Info("RequestID header is not found in the request, generated a request id")
 	}
+	logger = logger.WithValues(requtil.RequestIdHeaderKey, requestID)
+	ctx = log.IntoContext(ctx, logger)
+
+	req := origReq.WithContext(ctx)
+
+	helper := newInferenceProxyHelper(ip.ds, ip.director, req, rw)
+	helper.reqCtx.Request.Headers[requtil.RequestIdHeaderKey] = requestID // update in headers so director can consume it
 
 	err := prepareRequest(helper.reqCtx, req)
 	if err != nil {
@@ -72,6 +92,7 @@ func (ip *inferenceProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	proxy.ServeHTTP(helper, req)
 
+	helper.handleEndOfResponse()
 }
 
 func prepareRequest(reqCtx *giehandlers.RequestContext, req *http.Request) error {
@@ -90,6 +111,9 @@ func prepareRequest(reqCtx *giehandlers.RequestContext, req *http.Request) error
 			reqCtx.TargetModelName = reqCtx.Request.Headers[key]
 		}
 	}
+	reqCtx.Request.Headers[schemeKey] = req.URL.Scheme
+	reqCtx.Request.Headers[methodKey] = req.Method
+	reqCtx.Request.Headers[pathKey] = req.URL.Path
 
 	if reqCtx.FairnessID == "" {
 		reqCtx.FairnessID = defaultFairnessID
