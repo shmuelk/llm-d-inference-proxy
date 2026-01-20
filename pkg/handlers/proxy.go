@@ -68,36 +68,9 @@ func (ip *inferenceProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	proxy := httputil.ReverseProxy{
-		Rewrite: helper.Rewrite,
+		Rewrite: helper.rewrite,
 	}
-	proxy.ServeHTTP(rw, req)
-}
-
-type inferenceProxyHelper struct {
-	ds       datastore.Datastore
-	director *requestcontrol.Director
-	reqCtx   *giehandlers.RequestContext
-}
-
-// Rewrite is called by the ReverseProxy to rewite/redirect the request as needed
-func (ip *inferenceProxyHelper) Rewrite(pr *httputil.ProxyRequest) {
-	targetURL, _ := url.Parse("http://" + ip.reqCtx.TargetEndpoint)
-	pr.SetURL(targetURL)
-	ip.updateOutgoingRequest(pr.In.Context(), pr.Out)
-}
-
-func (ip *inferenceProxyHelper) updateOutgoingRequest(ctx context.Context, req *http.Request) {
-	requestBodyBytes, err := json.Marshal(ip.reqCtx.Request.Body)
-	if err != nil {
-		logger := log.FromContext(ctx)
-		logger.V(logutil.DEFAULT).Error(err, "Error marshalling request body")
-	}
-	// Update RequestSize to match marshalled body for Content-Length header.
-	ip.reqCtx.RequestSize = len(requestBodyBytes)
-	req.Body.Close()
-	req.Body = io.NopCloser(bytes.NewBuffer(requestBodyBytes))
-	req.ContentLength = int64(ip.reqCtx.RequestSize)
-	req.Header.Set("Content-Length", fmt.Sprintf("%d", ip.reqCtx.RequestSize))
+	proxy.ServeHTTP(helper, req)
 
 }
 
