@@ -8,6 +8,7 @@ import (
 
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/common"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datastore"
+	gieplugins "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/plugins"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/requestcontrol"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/saturationdetector/framework/plugins/utilizationdetector"
 	runserver "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/server"
@@ -47,3 +48,5 @@ func (h *ProxyRunnerHelper) RegisterHealthServer(mgr ctrl.Manager, logger logr.L
 	port int, isLeader *atomic.Bool, leaderElectionEnabled bool) error {
 	return nil
 }
+
+func (h *ProxyRunnerHelper) AddPlugins(plugins ...gieplugins.Plugin) {}
