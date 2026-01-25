@@ -6,7 +6,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/util/logging"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/scheduling/types"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/scheduling"
 	errutil "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/util/error"
 )
 
@@ -22,7 +22,7 @@ func (o *Orchestration) Body() map[string]any {
 	return o.reqCtx.Request.Body
 }
 
-func (o *Orchestration) DetermineTargets(profileNames ...string) (*types.SchedulingResult, error) {
+func (o *Orchestration) DetermineTargets(profileNames ...string) (*scheduling.SchedulingResult, error) {
 	ctx := o.req.Context()
 	logger := log.FromContext(ctx)
 	results, err := o.director.HandleRequestHelper(ctx, o.reqCtx, profileNames)
@@ -34,7 +34,7 @@ func (o *Orchestration) DetermineTargets(profileNames ...string) (*types.Schedul
 	return results, nil
 }
 
-func (o *Orchestration) SendRequest(target types.Endpoint) (map[string]string, map[string]any, error) {
+func (o *Orchestration) SendRequest(target scheduling.Endpoint) (map[string]string, map[string]any, error) {
 	logger := log.FromContext(o.req.Context())
 
 	o.commonSendRequest(target)
@@ -63,7 +63,7 @@ func (o *Orchestration) SendRequest(target types.Endpoint) (map[string]string, m
 	return headers, body, nil
 }
 
-func (o *Orchestration) SendRequestAndResponse(target types.Endpoint) {
+func (o *Orchestration) SendRequestAndResponse(target scheduling.Endpoint) {
 	logger := log.FromContext(o.req.Context())
 
 	o.commonSendRequest(target)
@@ -77,7 +77,7 @@ func (o *Orchestration) SendRequestAndResponse(target types.Endpoint) {
 	o.handleEndOfResponse(responseWriter)
 }
 
-func (o *Orchestration) commonSendRequest(target types.Endpoint) {
+func (o *Orchestration) commonSendRequest(target scheduling.Endpoint) {
 	ctx := o.req.Context()
 	logger := log.FromContext(ctx)
 
@@ -89,10 +89,10 @@ func (o *Orchestration) commonSendRequest(target types.Endpoint) {
 	o.reqCtx.TargetPod = metadata
 	o.reqCtx.TargetEndpoint = endpointString
 
-	schedulingResult := &types.SchedulingResult{
-		ProfileResults: map[string]*types.ProfileRunResult{
+	schedulingResult := &scheduling.SchedulingResult{
+		ProfileResults: map[string]*scheduling.ProfileRunResult{
 			orchestrationSelectedProfile: {
-				TargetEndpoints: []types.Endpoint{target},
+				TargetEndpoints: []scheduling.Endpoint{target},
 			},
 		},
 		PrimaryProfileName: orchestrationSelectedProfile,

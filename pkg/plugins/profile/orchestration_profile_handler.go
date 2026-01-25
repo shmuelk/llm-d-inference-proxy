@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/plugins"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/scheduling/framework"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/scheduling/types"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/plugin"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/scheduling"
 )
 
 const (
@@ -15,10 +14,10 @@ const (
 )
 
 // compile-time type assertion
-var _ framework.ProfileHandler = &OrchestrationProfileHandler{}
+var _ scheduling.ProfileHandler = &OrchestrationProfileHandler{}
 
 // OrchestrationProfileHandlerFactory defines the factory function for the OrchestrationProfileHandler
-func OrchestrationProfileHandlerFactory(name string, _ json.RawMessage, _ plugins.Handle) (plugins.Plugin, error) {
+func OrchestrationProfileHandlerFactory(name string, _ json.RawMessage, _ plugin.Handle) (plugin.Plugin, error) {
 	return NewOrchestrationProfileHandler().WithName(name), nil
 }
 
@@ -29,11 +28,11 @@ func NewOrchestrationProfileHandler() *OrchestrationProfileHandler {
 
 // OrchestrationProfileHandler handles scheduler profiles for orchestrations.
 type OrchestrationProfileHandler struct {
-	typedName plugins.TypedName
+	typedName plugin.TypedName
 }
 
 // TypedName returns the typed name of the plugin.
-func (h *OrchestrationProfileHandler) TypedName() plugins.TypedName {
+func (h *OrchestrationProfileHandler) TypedName() plugin.TypedName {
 	return h.typedName
 }
 
@@ -46,8 +45,8 @@ func (h *OrchestrationProfileHandler) WithName(name string) *OrchestrationProfil
 // Pick selects the SchedulingProfiles to run from the list of candidate profiles, while taking into consideration the request properties and the
 // previously executed cycles along with their results.
 // For orchestrations, this plugin is not called.
-func (h *OrchestrationProfileHandler) Pick(_ context.Context, _ *types.CycleState, _ *types.LLMRequest,
-	_ map[string]*framework.SchedulerProfile, _ map[string]*types.ProfileRunResult) map[string]*framework.SchedulerProfile {
+func (h *OrchestrationProfileHandler) Pick(_ context.Context, _ *scheduling.CycleState, _ *scheduling.LLMRequest,
+	_ map[string]*scheduling.SchedulerProfile, _ map[string]*scheduling.ProfileRunResult) map[string]*scheduling.SchedulerProfile {
 	return nil
 }
 
@@ -55,8 +54,8 @@ func (h *OrchestrationProfileHandler) Pick(_ context.Context, _ *types.CycleStat
 // In case of an error in any of the profiles, the matching entry in the profileResults will contain nil, to indicate there was
 // an error while running the profile.
 // For orchestrations, all results are copied.
-func (h *OrchestrationProfileHandler) ProcessResults(_ context.Context, _ *types.CycleState, _ *types.LLMRequest,
-	profileResults map[string]*types.ProfileRunResult) (*types.SchedulingResult, error) {
+func (h *OrchestrationProfileHandler) ProcessResults(_ context.Context, _ *scheduling.CycleState, _ *scheduling.LLMRequest,
+	profileResults map[string]*scheduling.ProfileRunResult) (*scheduling.SchedulingResult, error) {
 
-	return &types.SchedulingResult{ProfileResults: profileResults}, nil
+	return &scheduling.SchedulingResult{ProfileResults: profileResults}, nil
 }

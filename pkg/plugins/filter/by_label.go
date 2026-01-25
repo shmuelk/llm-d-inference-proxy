@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/plugins"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/scheduling/framework"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/scheduling/types"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/plugin"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/scheduling"
 )
 
 const (
@@ -21,10 +20,10 @@ type byLabelParameters struct {
 	AllowsNoLabel bool     `json:"allowsNoLabel"`
 }
 
-var _ framework.Filter = &ByLabel{} // validate interface conformance
+var _ scheduling.Filter = &ByLabel{} // validate interface conformance
 
 // ByLabelFactory defines the factory function for the ByLabel filter.
-func ByLabelFactory(name string, rawParameters json.RawMessage, _ plugins.Handle) (plugins.Plugin, error) {
+func ByLabelFactory(name string, rawParameters json.RawMessage, _ plugin.Handle) (plugin.Plugin, error) {
 	parameters := byLabelParameters{}
 	if rawParameters != nil {
 		if err := json.Unmarshal(rawParameters, &parameters); err != nil {
@@ -57,7 +56,7 @@ func NewByLabel(name string, labelName string, allowsNoLabel bool, validValues .
 	}
 
 	return &ByLabel{
-		typedName:     plugins.TypedName{Type: ByLabelType, Name: name},
+		typedName:     plugin.TypedName{Type: ByLabelType, Name: name},
 		labelName:     labelName,
 		allowsNoLabel: allowsNoLabel,
 		validValues:   validValuesMap,
@@ -67,7 +66,7 @@ func NewByLabel(name string, labelName string, allowsNoLabel bool, validValues .
 // ByLabel - filters out pods based on the values defined by the given label
 type ByLabel struct {
 	// name defines the filter typed name
-	typedName plugins.TypedName
+	typedName plugin.TypedName
 	// labelName defines the name of the label to be checked
 	labelName string
 	// validValues defines list of valid label values
@@ -77,7 +76,7 @@ type ByLabel struct {
 }
 
 // TypedName returns the typed name of the plugin
-func (f *ByLabel) TypedName() plugins.TypedName {
+func (f *ByLabel) TypedName() plugin.TypedName {
 	return f.typedName
 }
 
@@ -89,8 +88,8 @@ func (f *ByLabel) WithName(name string) *ByLabel {
 
 // Filter filters out all pods that are not marked with one of roles from the validRoles collection
 // or has no role label in case allowsNoRolesLabel is true
-func (f *ByLabel) Filter(_ context.Context, _ *types.CycleState, _ *types.LLMRequest, endpoints []types.Endpoint) []types.Endpoint {
-	filteredPods := []types.Endpoint{}
+func (f *ByLabel) Filter(_ context.Context, _ *scheduling.CycleState, _ *scheduling.LLMRequest, endpoints []scheduling.Endpoint) []scheduling.Endpoint {
+	filteredPods := []scheduling.Endpoint{}
 
 	for _, endpoint := range endpoints {
 		val, labelDefined := endpoint.GetMetadata().Labels[f.labelName]

@@ -8,7 +8,7 @@ import (
 
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/common"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datastore"
-	gieplugins "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/plugins"
+	gieplugin "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/plugin"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/requestcontrol"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/saturationdetector/framework/plugins/utilizationdetector"
 	runserver "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/server"
@@ -52,7 +52,7 @@ func (h *ProxyRunnerHelper) RegisterHealthServer(mgr ctrl.Manager, logger logr.L
 	return nil
 }
 
-func (h *ProxyRunnerHelper) AddPlugins(pluginObjects ...gieplugins.Plugin) {
+func (h *ProxyRunnerHelper) AddPlugins(pluginObjects ...gieplugin.Plugin) {
 	for _, plugin := range pluginObjects {
 		if orchestrationPlugin, ok := plugin.(orchestrations.OrchestrationPlugin); ok {
 			h.orchestrator = orchestrationPlugin

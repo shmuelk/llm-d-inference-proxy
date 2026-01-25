@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/util/logging"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/plugins"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/scheduling/types"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/plugin"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/scheduling"
 
 	"github.com/llm-d/llm-d-inference-proxy/pkg/orchestrations"
 )
@@ -49,7 +49,7 @@ type pdOrchestartionParameters struct {
 var _ orchestrations.OrchestrationPlugin = &PdOrchestration{}
 
 // PdOrchestrationFactory defines the factory function for the PdOrchestration
-func PdOrchestrationFactory(name string, rawParameters json.RawMessage, _ plugins.Handle) (plugins.Plugin, error) {
+func PdOrchestrationFactory(name string, rawParameters json.RawMessage, _ plugin.Handle) (plugin.Plugin, error) {
 	parameters := pdOrchestartionParameters{
 		DecodeProfile:  defaultDecodeProfile,
 		PrefillProfile: defaultPrefillProfile,
@@ -73,14 +73,14 @@ func NewPdOrchestration(deferredDecode bool, prefillProfile, decodeProfile strin
 
 // OrchestrationProfileHandler handles scheduler profiles for orchestrations.
 type PdOrchestration struct {
-	typedName      plugins.TypedName
+	typedName      plugin.TypedName
 	deferredDecode bool
 	decodeProfile  string
 	prefillProfile string
 }
 
 // TypedName returns the typed name of the plugin.
-func (o *PdOrchestration) TypedName() plugins.TypedName {
+func (o *PdOrchestration) TypedName() plugin.TypedName {
 	return o.typedName
 }
 
@@ -155,7 +155,7 @@ func (o *PdOrchestration) deferredDecodePD(ctx context.Context, orchestration *o
 	return nil
 }
 
-func (o *PdOrchestration) sendPrefillRequest(prefillResults *types.ProfileRunResult, orchestration *orchestrations.Orchestration, logger logr.Logger) error {
+func (o *PdOrchestration) sendPrefillRequest(prefillResults *scheduling.ProfileRunResult, orchestration *orchestrations.Orchestration, logger logr.Logger) error {
 	// Generate unique request UUID
 	uuid, err := uuid.NewUUID()
 	if err != nil {
@@ -219,7 +219,7 @@ func (o *PdOrchestration) sendPrefillRequest(prefillResults *types.ProfileRunRes
 	return nil
 }
 
-func (o *PdOrchestration) sendDecodeRequest(decodeResults *types.ProfileRunResult, orchestration *orchestrations.Orchestration, logger logr.Logger) {
+func (o *PdOrchestration) sendDecodeRequest(decodeResults *scheduling.ProfileRunResult, orchestration *orchestrations.Orchestration, logger logr.Logger) {
 	logger.V(5).Info("sending request to decoder", "body", orchestration.Body())
 	targetMetadata := decodeResults.TargetEndpoints[0].GetMetadata()
 	logger.V(4).Info("sending request to decoder", "to", net.JoinHostPort(targetMetadata.GetIPAddress(), targetMetadata.GetPort()))

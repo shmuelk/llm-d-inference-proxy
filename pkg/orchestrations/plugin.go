@@ -3,10 +3,10 @@ package orchestrations
 import (
 	"context"
 
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/plugins"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/plugin"
 )
 
 type OrchestrationPlugin interface {
-	plugins.Plugin
+	plugin.Plugin
 	Orchestrate(ctx context.Context, orchestration *Orchestration) error
 }

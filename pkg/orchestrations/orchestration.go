@@ -16,6 +16,7 @@ import (
 	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/util/logging"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datastore"
 	giehandlers "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/handlers"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/handlers/types"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/metadata"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/metrics"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/requestcontrol"
@@ -255,7 +256,7 @@ func (o *Orchestration) HandleResponseBody(ctx context.Context, response map[str
 	}
 	if response["usage"] != nil {
 		usg := response["usage"].(map[string]any)
-		usage := giehandlers.Usage{
+		usage := types.Usage{
 			PromptTokens:     int(usg["prompt_tokens"].(float64)),
 			CompletionTokens: int(usg["completion_tokens"].(float64)),
 			TotalTokens:      int(usg["total_tokens"].(float64)),
@@ -263,7 +264,7 @@ func (o *Orchestration) HandleResponseBody(ctx context.Context, response map[str
 		if usg["prompt_token_details"] != nil {
 			detailsMap := usg["prompt_token_details"].(map[string]any)
 			if cachedTokens, ok := detailsMap["cached_tokens"]; ok {
-				usage.PromptTokenDetails = &giehandlers.PromptTokenDetails{
+				usage.PromptTokenDetails = &types.PromptTokenDetails{
 					CachedTokens: int(cachedTokens.(float64)),
 				}
 			}

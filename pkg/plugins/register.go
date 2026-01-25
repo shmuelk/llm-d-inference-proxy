@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/plugins"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/plugin"
 
 	"github.com/llm-d/llm-d-inference-proxy/pkg/plugins/filter"
 	"github.com/llm-d/llm-d-inference-proxy/pkg/plugins/orchestration"
@@ -11,13 +11,13 @@ import (
 
 // RegisterAllPlugins registers the factory functions of all plugins in this repository.
 func RegisterAllPlugins() {
-	plugins.Register(filter.ByLabelType, filter.ByLabelFactory)
-	plugins.Register(filter.ByLabelSelectorType, filter.ByLabelSelectorFactory)
-	plugins.Register(filter.DecodeRoleType, filter.DecodeRoleFactory)
-	plugins.Register(filter.PrefillRoleType, filter.PrefillRoleFactory)
-	plugins.Register(prerequest.PrefillHeaderHandlerType, prerequest.PrefillHeaderHandlerFactory)
-	plugins.Register(profile.PdProfileHandlerType, profile.PdProfileHandlerFactory)
+	plugin.Register(filter.ByLabelType, filter.ByLabelFactory)
+	plugin.Register(filter.ByLabelSelectorType, filter.ByLabelSelectorFactory)
+	plugin.Register(filter.DecodeRoleType, filter.DecodeRoleFactory)
+	plugin.Register(filter.PrefillRoleType, filter.PrefillRoleFactory)
+	plugin.Register(prerequest.PrefillHeaderHandlerType, prerequest.PrefillHeaderHandlerFactory)
+	plugin.Register(profile.PdProfileHandlerType, profile.PdProfileHandlerFactory)
 
-	plugins.Register(orchestration.PdOrchestrationType, orchestration.PdOrchestrationFactory)
-	plugins.Register(profile.OrchestrationProfileHandlerType, profile.OrchestrationProfileHandlerFactory)
+	plugin.Register(orchestration.PdOrchestrationType, orchestration.PdOrchestrationFactory)
+	plugin.Register(profile.OrchestrationProfileHandlerType, profile.OrchestrationProfileHandlerFactory)
 }

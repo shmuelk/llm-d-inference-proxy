@@ -4,7 +4,7 @@ go 1.24.9
 
 toolchain go1.24.11
 
-replace sigs.k8s.io/gateway-api-inference-extension => github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260122153559-b1e7796c8df2
+replace sigs.k8s.io/gateway-api-inference-extension => github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260125135846-23939350e463
 
 require (
 	github.com/go-logr/logr v1.4.3
