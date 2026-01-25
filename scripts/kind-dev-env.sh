@@ -221,7 +221,7 @@ else
   if [ "${WITH_SIDECAR}" != "\"true\"" ]; then
     KUSTOMIZE_DIR="deploy/environments/dev/kind-pd"
   else
-    KUSTOMIZE_DIR="deploy/environments/dev/kind-pd-sizecar"
+    KUSTOMIZE_DIR="deploy/environments/dev/kind-pd-sidecar"
   fi
 fi
 
