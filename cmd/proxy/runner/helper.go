@@ -13,10 +13,13 @@ import (
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/saturationdetector/framework/plugins/utilizationdetector"
 	runserver "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/server"
 
+	"github.com/llm-d/llm-d-inference-proxy/pkg/orchestrations"
 	"github.com/llm-d/llm-d-inference-proxy/pkg/server"
 )
 
-type ProxyRunnerHelper struct{}
+type ProxyRunnerHelper struct {
+	orchestrator orchestrations.OrchestrationPlugin
+}
 
 func (h *ProxyRunnerHelper) CreateAndRegisterServer(ds datastore.Datastore, opts *runserver.Options,
 	gknn common.GKNN, director *requestcontrol.Director, saturationDetector *utilizationdetector.Detector,
@@ -36,7 +39,7 @@ func (h *ProxyRunnerHelper) CreateAndRegisterServer(ds datastore.Datastore, opts
 		SaturationDetector:               saturationDetector,
 		UseExperimentalDatalayerV2:       useExperimentalDatalayerV2,
 	}
-	if err := mgr.Add(serverRunner.AsRunnable(ctrl.Log.WithName("ext-proc"))); err != nil {
+	if err := mgr.Add(serverRunner.AsRunnable(h.orchestrator, ctrl.Log.WithName("ext-proc"))); err != nil {
 		logger.Error(err, "Failed to register ext-proc gRPC server runnable")
 		return err
 	}
@@ -49,4 +52,10 @@ func (h *ProxyRunnerHelper) RegisterHealthServer(mgr ctrl.Manager, logger logr.L
 	return nil
 }
 
-func (h *ProxyRunnerHelper) AddPlugins(plugins ...gieplugins.Plugin) {}
+func (h *ProxyRunnerHelper) AddPlugins(pluginObjects ...gieplugins.Plugin) {
+	for _, plugin := range pluginObjects {
+		if orchestrationPlugin, ok := plugin.(orchestrations.OrchestrationPlugin); ok {
+			h.orchestrator = orchestrationPlugin
+		}
+	}
+}
