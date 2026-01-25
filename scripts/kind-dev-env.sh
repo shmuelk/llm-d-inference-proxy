@@ -76,7 +76,6 @@ export VLLM_REPLICA_COUNT_D="${VLLM_REPLICA_COUNT_D:-2}"
 # Data Parallel size
 export VLLM_DATA_PARALLEL_SIZE="${VLLM_DATA_PARALLEL_SIZE:-1}"
 
-PRIMARY_PORT="0"
 if [ "${PD_ENABLED}" != "\"true\"" ]; then
   if [ "${KV_CACHE_ENABLED}" != "true" ]; then
     DEFAULT_PROXY_CONFIG="deploy/config/proxy-config.yaml"
@@ -87,9 +86,6 @@ else
   if [ "${KV_CACHE_ENABLED}" != "true" ]; then
     if [ "${WITH_SIDECAR}" == "\"true\"" ]; then
       DEFAULT_PROXY_CONFIG="deploy/config/pd-sidecar-proxy-config.yaml"
-      if [ ${VLLM_DATA_PARALLEL_SIZE} -ne 1 ]; then
-        PRIMARY_PORT="8000"
-      fi
     else 
       DEFAULT_PROXY_CONFIG="deploy/config/pd-proxy-config.yaml"
     fi
@@ -100,7 +96,6 @@ else
 fi
 
 export PROXY_CONFIG="${PROXY_CONFIG:-${DEFAULT_PROXY_CONFIG}}"
-export PRIMARY_PORT
 
 # ------------------------------------------------------------------------------
 # Setup & Requirement Checks
