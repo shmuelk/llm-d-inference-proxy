@@ -66,6 +66,9 @@ export PD_ENABLED="\"${PD_ENABLED:-false}\""
 # By default we are not setting up for PD with a Sidecar
 export WITH_SIDECAR="\"${WITH_SIDECAR:-false}\""
 
+# By default we are not setting up for PD with deferred decode
+export WITH_DEFERRED_DECODE="${WITH_DEFERRED_DECODE:-false}"
+
 # By default we are not setting up for KV cache
 export KV_CACHE_ENABLED="${KV_CACHE_ENABLED:-false}"
 
@@ -230,7 +233,7 @@ TEMP_FILE=$(mktemp)
 trap "rm -f \"${TEMP_FILE}\"" EXIT
 
 kubectl --context ${KUBE_CONTEXT} delete configmap proxy-config --ignore-not-found
-envsubst '$PRIMARY_PORT' < ${PROXY_CONFIG} > ${TEMP_FILE}
+envsubst '$WITH_DEFERRED_DECODE' < ${PROXY_CONFIG} > ${TEMP_FILE}
 kubectl --context ${KUBE_CONTEXT} create configmap proxy-config --from-file=proxy-config.yaml=${TEMP_FILE}
 
 kustomize build --enable-helm  ${KUSTOMIZE_DIR} \

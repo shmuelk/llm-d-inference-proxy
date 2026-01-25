@@ -12,7 +12,7 @@ plugins:
 - type: orchestration-profile-handler
 - type: pd-orchestration
   parameters:
-    deferredDecode: true
+    deferredDecode: $WITH_DEFERRED_DECODE
 schedulingProfiles:
 - name: prefill
   plugins:
