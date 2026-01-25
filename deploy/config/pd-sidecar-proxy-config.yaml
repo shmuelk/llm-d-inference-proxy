@@ -2,17 +2,21 @@
 # Use with small hash block size for simulation purposes
 apiVersion: inference.networking.x-k8s.io/v1alpha1
 kind: EndpointPickerConfig
-featureGates:
-- prepareDataPlugins
 plugins:
+- type: prefill-header-handler
 - type: prefix-cache-scorer
+  parameters:
+    hashBlockSize: 5
+    maxPrefixBlocksToMatch: 256
+    lruCapacityPerServer: 31250
 - type: prefill-filter
 - type: decode-filter
 - type: max-score-picker
-- type: orchestration-profile-handler
-- type: pd-orchestration
+- type: pd-profile-handler
   parameters:
-    deferredDecode: true
+    threshold: 10
+    hashBlockSize: 5
+    primaryPort: ${PRIMARY_PORT}
 schedulingProfiles:
 - name: prefill
   plugins:

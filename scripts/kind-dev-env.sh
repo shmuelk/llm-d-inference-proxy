@@ -63,6 +63,9 @@ export VLLM_REPLICA_COUNT="${VLLM_REPLICA_COUNT:-1}"
 # By default we are not setting up for PD
 export PD_ENABLED="\"${PD_ENABLED:-false}\""
 
+# By default we are not setting up for PD with a Sidecar
+export WITH_SIDECAR="\"${WITH_SIDECAR:-false}\""
+
 # By default we are not setting up for KV cache
 export KV_CACHE_ENABLED="${KV_CACHE_ENABLED:-false}"
 
@@ -74,7 +77,7 @@ export VLLM_REPLICA_COUNT_D="${VLLM_REPLICA_COUNT_D:-2}"
 export VLLM_DATA_PARALLEL_SIZE="${VLLM_DATA_PARALLEL_SIZE:-1}"
 
 PRIMARY_PORT="0"
-if [ "${PD_ENABLED}" != "\"true\"" ] && [ ${VLLM_DATA_PARALLEL_SIZE} -eq 1 ]; then
+if [ "${PD_ENABLED}" != "\"true\"" ]; then
   if [ "${KV_CACHE_ENABLED}" != "true" ]; then
     DEFAULT_PROXY_CONFIG="deploy/config/proxy-config.yaml"
   else
@@ -82,13 +85,13 @@ if [ "${PD_ENABLED}" != "\"true\"" ] && [ ${VLLM_DATA_PARALLEL_SIZE} -eq 1 ]; th
   fi
 else
   if [ "${KV_CACHE_ENABLED}" != "true" ]; then
-    if [ "${PD_ENABLED}" == "\"true\"" ]; then
-      DEFAULT_PROXY_CONFIG="deploy/config/pd-proxy-config.yaml"
+    if [ "${WITH_SIDECAR}" == "\"true\"" ]; then
+      DEFAULT_PROXY_CONFIG="deploy/config/pd-sidecar-proxy-config.yaml"
       if [ ${VLLM_DATA_PARALLEL_SIZE} -ne 1 ]; then
         PRIMARY_PORT="8000"
       fi
-    else
-      DEFAULT_PROXY_CONFIG="deploy/config/dp-proxy-config.yaml"
+    else 
+      DEFAULT_PROXY_CONFIG="deploy/config/pd-proxy-config.yaml"
     fi
   else
     echo "Invalid configuration: PD_ENABLED=true and KV_CACHE_ENABLED=true is not supported"
@@ -220,7 +223,11 @@ kustomize build deploy/components/crds-gie |
 if [ "${PD_ENABLED}" != "\"true\"" ]; then
   KUSTOMIZE_DIR="deploy/environments/dev/kind"
 else
-  KUSTOMIZE_DIR="deploy/environments/dev/kind-pd"
+  if [ "${WITH_SIDECAR}" != "\"true\"" ]; then
+    KUSTOMIZE_DIR="deploy/environments/dev/kind-pd"
+  else
+    KUSTOMIZE_DIR="deploy/environments/dev/kind-pd-sizecar"
+  fi
 fi
 
 TEMP_FILE=$(mktemp)
