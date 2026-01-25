@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/llm-d/llm-d-inference-proxy/pkg/handlers"
+	"github.com/llm-d/llm-d-inference-proxy/pkg/orchestrations"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/common"
@@ -40,7 +41,7 @@ type HttpServerRunner struct {
 	TestPodMetricsClient *backendmetrics.FakePodMetricsClient
 }
 
-func (r *HttpServerRunner) AsRunnable(logger logr.Logger) manager.Runnable {
+func (r *HttpServerRunner) AsRunnable(orchestrator orchestrations.OrchestrationPlugin, logger logr.Logger) manager.Runnable {
 	return NoLeaderElection(manager.RunnableFunc(func(ctx context.Context) error {
 		if r.UseExperimentalDatalayerV2 {
 			dlmetrics.StartMetricsLogger(ctx, r.Datastore, r.RefreshPrometheusMetricsInterval, r.MetricsStalenessThreshold)
@@ -81,7 +82,7 @@ func (r *HttpServerRunner) AsRunnable(logger logr.Logger) manager.Runnable {
 			srv.TLSConfig = tlsConfig
 		}
 
-		srv.Handler = handlers.NewProxy(r.Datastore, r.Director)
+		srv.Handler = handlers.NewProxy(orchestrator, r.Datastore, r.Director)
 
 		// Forward to the Http runnable.
 		return HttpServer("http-src", srv, r.GrpcPort, r.SecureServing).Start(ctx)

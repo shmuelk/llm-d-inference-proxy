@@ -1,58 +1,32 @@
 package handlers
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
-	"net/http/httputil"
-	"strings"
 
 	"github.com/google/uuid"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/util/logging"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datastore"
-	giehandlers "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/handlers"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/metadata"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/requestcontrol"
-	errutil "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/util/error"
 	requtil "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/util/request"
+
+	"github.com/llm-d/llm-d-inference-proxy/pkg/orchestrations"
 )
 
-const (
-	// defaultFairnessID is the default fairness ID used when no ID is provided in the request.
-	// This ensures that requests without explicit fairness identifiers are still grouped and managed by the Flow Control
-	// system.
-	defaultFairnessID = "default-flow"
+const ()
 
-	// schemeKey is the Envoy Pseudo Header used for the scheme of the request
-	schemeKey = ":scheme"
-	// methodKey is the Envoy Pseudo Header used for the method of the request
-	methodKey = ":method"
-	// pathKey is the Envoy Pseudo Header used for the path of the request
-	pathKey = ":path"
-)
-
-var (
-	// EnvoyHeaders are sent by Envoy and are added here. However, as they
-	// are invalid header names, they must be deleted here
-	EnvoyHeaders = sets.New(
-		strings.ToLower(schemeKey),
-		strings.ToLower(methodKey),
-		strings.ToLower(pathKey),
-	)
-)
-
-func NewProxy(ds datastore.Datastore, director *requestcontrol.Director) http.Handler {
+func NewProxy(orchestrator orchestrations.OrchestrationPlugin, ds datastore.Datastore, director *requestcontrol.Director) http.Handler {
 	return &inferenceProxy{
-		ds:       ds,
-		director: director,
+		orchestrator: orchestrator,
+		ds:           ds,
+		director:     director,
 	}
 }
 
 type inferenceProxy struct {
-	ds       datastore.Datastore
-	director *requestcontrol.Director
+	orchestrator orchestrations.OrchestrationPlugin
+	ds           datastore.Datastore
+	director     *requestcontrol.Director
 }
 
 func (ip *inferenceProxy) ServeHTTP(rw http.ResponseWriter, origReq *http.Request) {
@@ -71,82 +45,21 @@ func (ip *inferenceProxy) ServeHTTP(rw http.ResponseWriter, origReq *http.Reques
 
 	req := origReq.WithContext(ctx)
 
-	helper := newInferenceProxyHelper(ip.ds, ip.director, req, rw)
-	helper.reqCtx.Request.Headers[requtil.RequestIdHeaderKey] = requestID // update in headers so director can consume it
+	orchestration := orchestrations.NewOrchestration(ip.ds, ip.director, req, requestID, rw)
 
-	err := prepareRequest(helper.reqCtx, req)
+	err := orchestration.PrepareRequest()
 	if err != nil {
 		sendError(err, rw)
 		return
 	}
 
-	helper.reqCtx, err = ip.director.HandleRequest(ctx, helper.reqCtx)
-	if err != nil {
-		logger.V(logutil.DEFAULT).Error(err, "Error handling request")
-		sendError(err, rw)
-		return
-	}
-
-	proxy := httputil.ReverseProxy{
-		Rewrite: helper.rewrite,
-	}
-	proxy.ServeHTTP(helper, req)
-
-	helper.handleEndOfResponse()
-}
-
-func prepareRequest(reqCtx *giehandlers.RequestContext, req *http.Request) error {
-	ctx := req.Context()
-	logger := log.FromContext(ctx)
-	loggerTrace := logger.V(logutil.TRACE)
-	loggerTrace.Info("Processing")
-	for key, values := range req.Header {
-		reqCtx.Request.Headers[key] = values[0]
-		switch key {
-		case metadata.FlowFairnessIDKey:
-			reqCtx.FairnessID = reqCtx.Request.Headers[key]
-		case metadata.ObjectiveKey:
-			reqCtx.ObjectiveKey = reqCtx.Request.Headers[key]
-		case metadata.ModelNameRewriteKey:
-			reqCtx.TargetModelName = reqCtx.Request.Headers[key]
-		}
-	}
-	reqCtx.Request.Headers[schemeKey] = req.URL.Scheme
-	reqCtx.Request.Headers[methodKey] = req.Method
-	reqCtx.Request.Headers[pathKey] = req.URL.Path
-
-	if reqCtx.FairnessID == "" {
-		reqCtx.FairnessID = defaultFairnessID
-	}
-
-	body, err := io.ReadAll(req.Body)
-	defer req.Body.Close()
-	if err != nil {
-		if logger.V(logutil.DEBUG).Enabled() {
-			logger.Info("Error unmarshaling request body", "body", string(body), "err", err)
-		}
-		err = errutil.Error{
-			Code: errutil.BadRequest,
-			Msg:  "Error unmarshaling request body",
-		}
+	if ip.orchestrator == nil {
+		// If not using an OrchestrationPlugin, use regular Director and Scheduler functionality
+		orchestration.StandardProcessing()
 	} else {
-		loggerTrace.Info("Incoming body", "text", body)
-
-		loggerTrace.Info("decoding")
-		if errUnmarshal := json.Unmarshal(body, &reqCtx.Request.Body); errUnmarshal != nil {
-			if logger.V(logutil.DEBUG).Enabled() {
-				logger.Info("Error unmarshaling request body", "body", string(body), "err", errUnmarshal)
-			}
-			err = errutil.Error{
-				Code: errutil.BadRequest,
-				Msg:  "Error unmarshaling request body",
-			}
-		} else {
-			// Body stream complete. Capture raw size for flow control.
-			reqCtx.RequestSize = len(body)
-		}
+		// The Orchestrator will orchestrate things here
+		ip.orchestrator.Orchestrate(ctx, orchestration)
 	}
-	return err
 }
 
 func sendError(err error, rw http.ResponseWriter) {
