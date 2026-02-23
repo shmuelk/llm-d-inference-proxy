@@ -1,8 +1,6 @@
 module github.com/llm-d/llm-d-inference-proxy
 
-go 1.24.9
-
-toolchain go1.24.11
+go 1.25.0
 
 replace sigs.k8s.io/gateway-api-inference-extension => github.com/shmuelk/gateway-api-inference-extension v0.0.0-20260222143518-f998a3ffb843
 
