@@ -13,10 +13,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/util/logging"
+	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/observability/logging"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datastore"
+	frwrq "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/requestcontrol"
 	giehandlers "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/handlers"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/handlers/types"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/metadata"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/metrics"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/requestcontrol"
@@ -256,7 +256,7 @@ func (o *Orchestration) HandleResponseBody(ctx context.Context, response map[str
 	}
 	if response["usage"] != nil {
 		usg := response["usage"].(map[string]any)
-		usage := types.Usage{
+		usage := frwrq.Usage{
 			PromptTokens:     int(usg["prompt_tokens"].(float64)),
 			CompletionTokens: int(usg["completion_tokens"].(float64)),
 			TotalTokens:      int(usg["total_tokens"].(float64)),
@@ -264,7 +264,7 @@ func (o *Orchestration) HandleResponseBody(ctx context.Context, response map[str
 		if usg["prompt_token_details"] != nil {
 			detailsMap := usg["prompt_token_details"].(map[string]any)
 			if cachedTokens, ok := detailsMap["cached_tokens"]; ok {
-				usage.PromptTokenDetails = &types.PromptTokenDetails{
+				usage.PromptTokenDetails = &frwrq.PromptTokenDetails{
 					CachedTokens: int(cachedTokens.(float64)),
 				}
 			}

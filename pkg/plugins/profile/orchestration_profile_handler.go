@@ -46,7 +46,7 @@ func (h *OrchestrationProfileHandler) WithName(name string) *OrchestrationProfil
 // previously executed cycles along with their results.
 // For orchestrations, this plugin is not called.
 func (h *OrchestrationProfileHandler) Pick(_ context.Context, _ *scheduling.CycleState, _ *scheduling.LLMRequest,
-	_ map[string]*scheduling.SchedulerProfile, _ map[string]*scheduling.ProfileRunResult) map[string]*scheduling.SchedulerProfile {
+	_ map[string]scheduling.SchedulerProfile, _ map[string]*scheduling.ProfileRunResult) map[string]scheduling.SchedulerProfile {
 	return nil
 }
 

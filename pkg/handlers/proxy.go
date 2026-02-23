@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/util/logging"
+	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/observability/logging"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datastore"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/requestcontrol"
 	requtil "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/util/request"

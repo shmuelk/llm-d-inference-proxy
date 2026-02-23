@@ -10,10 +10,10 @@ import (
 	"strconv"
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/util/logging"
+	logutil "sigs.k8s.io/gateway-api-inference-extension/pkg/common/observability/logging"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/plugin"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/interface/scheduling"
-	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/scheduling/framework/plugins/multi/prefix"
+	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/framework/plugins/scheduling/scorer/prefix"
 
 	"github.com/llm-d/llm-d-inference-proxy/pkg/common"
 	"github.com/llm-d/llm-d-inference-proxy/pkg/metrics"
@@ -26,6 +26,9 @@ const (
 	defaultDecodeProfile    = "decode"
 	defaultPrefillProfile   = "prefill"
 	defaultPrefixPluginType = prefix.PrefixCachePluginType
+
+	// An estimated average characters per token, used since the request we cached is not tokenized.
+	averageCharactersPerToken = 4
 )
 
 type pdProfileHandlerParameters struct {
@@ -48,7 +51,7 @@ func PdProfileHandlerFactory(name string, rawParameters json.RawMessage, _ plugi
 		DecodeProfile:    defaultDecodeProfile,
 		PrefillProfile:   defaultPrefillProfile,
 		PrefixPluginType: defaultPrefixPluginType,
-		HashBlockSize:    prefix.DefaultBlockSize,
+		HashBlockSize:    prefix.DefaultBlockSizeTokens * averageCharactersPerToken,
 		PrimaryPort:      0,
 	}
 	if rawParameters != nil {
@@ -120,11 +123,11 @@ func (h *PdProfileHandler) WithName(name string) *PdProfileHandler {
 
 // Pick selects the SchedulingProfiles to run from the list of candidate profiles, while taking into consideration the request properties and the
 // previously executed cycles along with their results.
-func (h *PdProfileHandler) Pick(ctx context.Context, cycleState *scheduling.CycleState, request *scheduling.LLMRequest, profiles map[string]*scheduling.SchedulerProfile,
-	profileResults map[string]*scheduling.ProfileRunResult) map[string]*scheduling.SchedulerProfile {
+func (h *PdProfileHandler) Pick(ctx context.Context, cycleState *scheduling.CycleState, request *scheduling.LLMRequest, profiles map[string]scheduling.SchedulerProfile,
+	profileResults map[string]*scheduling.ProfileRunResult) map[string]scheduling.SchedulerProfile {
 	if _, executed := profileResults[h.decodeProfile]; !executed {
 		// if decode profile was not executed yet, first let the scheduler run the decode profile
-		return map[string]*scheduling.SchedulerProfile{
+		return map[string]scheduling.SchedulerProfile{
 			h.decodeProfile: profiles[h.decodeProfile],
 		}
 	}
@@ -133,7 +136,7 @@ func (h *PdProfileHandler) Pick(ctx context.Context, cycleState *scheduling.Cycl
 	// when a profile run fails its result value is nil. we need to check decode result before continuing to prefill
 	// check if all configured profiles have been executed, or if decode failed, no need to run more profiles.
 	if len(profiles) == len(profileResults) || profileResults[h.decodeProfile] == nil {
-		return map[string]*scheduling.SchedulerProfile{}
+		return map[string]scheduling.SchedulerProfile{}
 	}
 
 	if h.pdThreshold > 0 {
@@ -152,8 +155,8 @@ func (h *PdProfileHandler) Pick(ctx context.Context, cycleState *scheduling.Cycl
 		if err != nil {
 			log.FromContext(ctx).Error(err, "unable to read prefix state")
 		} else {
-			decodePod := profileResults[h.decodeProfile].TargetEndpoints[0].GetMetadata().NamespacedName
-			hitPrefix := max(prefixState.PrefixCacheServers[prefix.ServerID(decodePod)]-1, 0) // The first hit is always the model name
+			decodeEndpoint := profileResults[h.decodeProfile].TargetEndpoints[0].GetMetadata().NamespacedName
+			hitPrefix := max(prefixState.PrefixCacheServers[prefix.ServerID(decodeEndpoint)]-1, 0) // The first hit is always the model name
 			hitPercentagePrefix = float64(hitPrefix*h.hashBlockSize) / float64(len(userInput))
 			log.FromContext(ctx).V(logutil.DEBUG).Info("Computed hit percentage for prefix cache", "hitPercentage", hitPercentagePrefix,
 				"promptLength", len(userInput))
@@ -162,13 +165,13 @@ func (h *PdProfileHandler) Pick(ctx context.Context, cycleState *scheduling.Cycl
 		if (1.0-hitPercentagePrefix)*float64(len(userInput)) < float64(h.pdThreshold) {
 			log.FromContext(ctx).Info("Non-cached suffix is smaller than threshold, using decode profile only", "hitPercentage", hitPercentagePrefix)
 			metrics.RecordPDDecision(request.TargetModel, metrics.DecisionTypeDecodeOnly)
-			return map[string]*scheduling.SchedulerProfile{} // do not run prefill
+			return map[string]scheduling.SchedulerProfile{} // do not run prefill
 		}
 	}
 
 	metrics.RecordPDDecision(request.TargetModel, metrics.DecisionTypePrefillDecode)
 	// run the prefill profile
-	return map[string]*scheduling.SchedulerProfile{
+	return map[string]scheduling.SchedulerProfile{
 		h.prefillProfile: profiles[h.prefillProfile],
 	}
 }
@@ -198,9 +201,9 @@ func (h *PdProfileHandler) ProcessResults(_ context.Context, _ *scheduling.Cycle
 		}
 
 		for _, target := range decodeRunResults.TargetEndpoints {
-			updatedMetadata := target.GetMetadata().Clone()
-			updatedMetadata.Port = h.primaryPort
-			targetEndpoint := &scheduling.PodMetrics{EndpointMetadata: updatedMetadata, Metrics: target.GetMetrics().Clone()}
+			updatedPodInfo := target.GetMetadata().Clone()
+			updatedPodInfo.Port = h.primaryPort
+			targetEndpoint := scheduling.NewEndpoint(updatedPodInfo, target.GetMetrics().Clone(), nil)
 			updatedResult.TargetEndpoints = append(updatedResult.TargetEndpoints, targetEndpoint)
 		}
 		updatedResults[h.decodeProfile] = &updatedResult

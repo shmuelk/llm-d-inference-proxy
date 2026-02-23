@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/common"
 
 	backendmetrics "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/backend/metrics"
-	dlmetrics "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datalayer/metrics"
+	datalayerlogger "sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datalayer/logger"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/datastore"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/requestcontrol"
 	"sigs.k8s.io/gateway-api-inference-extension/pkg/epp/saturationdetector/framework/plugins/utilizationdetector"
@@ -44,7 +44,7 @@ type HttpServerRunner struct {
 func (r *HttpServerRunner) AsRunnable(orchestrator orchestrations.OrchestrationPlugin, logger logr.Logger) manager.Runnable {
 	return NoLeaderElection(manager.RunnableFunc(func(ctx context.Context) error {
 		if r.UseExperimentalDatalayerV2 {
-			dlmetrics.StartMetricsLogger(ctx, r.Datastore, r.RefreshPrometheusMetricsInterval, r.MetricsStalenessThreshold)
+			datalayerlogger.StartMetricsLogger(ctx, r.Datastore, r.RefreshPrometheusMetricsInterval, r.MetricsStalenessThreshold)
 		} else {
 			backendmetrics.StartMetricsLogger(ctx, r.Datastore, r.RefreshPrometheusMetricsInterval, r.MetricsStalenessThreshold)
 		}
